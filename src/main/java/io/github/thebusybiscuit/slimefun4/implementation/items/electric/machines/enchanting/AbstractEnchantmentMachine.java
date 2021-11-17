@@ -1,12 +1,19 @@
 package io.github.thebusybiscuit.slimefun4.implementation.items.electric.machines.enchanting;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import io.github.thebusybiscuit.slimefun4.core.machines.MachineProcessor;
+import io.github.thebusybiscuit.slimefun4.implementation.operations.CraftingOperation;
+import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.abstractItems.MachineRecipe;
+import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -83,5 +90,72 @@ abstract class AbstractEnchantmentMachine extends AContainer {
         }
 
         return false;
+    }
+
+    private boolean inputChanged(Block b) {
+        BlockMenu inv = BlockStorage.getInventory(b);
+
+        MachineProcessor<CraftingOperation> processor = getMachineProcessor();
+        List<ItemStack> recipeInputItems = new ArrayList<>(Arrays.asList(processor.getOperation(b).getIngredients()));
+
+        List<ItemStack> currentInputItems = new ArrayList<>();
+        for (int slot : getInputSlots()) {
+            currentInputItems.add(inv.getItemInSlot(slot));
+        }
+
+        for (ItemStack currentItem : currentInputItems) {
+            recipeInputItems.remove(currentItem);
+        }
+
+        return recipeInputItems.size() != 0;
+    }
+
+    @Override
+    protected void tick(Block b) {
+        BlockMenu inv = BlockStorage.getInventory(b);
+        MachineProcessor<CraftingOperation> processor = getMachineProcessor();
+        CraftingOperation currentOperation = processor.getOperation(b);
+
+        if (currentOperation != null) {
+            if (takeCharge(b.getLocation())) {
+
+                if (!currentOperation.isFinished()) {
+
+                    for (int slot : getOutputSlots()) {
+                        if (inv.getItemInSlot(slot) != null) {
+                            inv.replaceExistingItem(22, new CustomItemStack(Material.BARRIER, "&6暂停工作", "&e请清空右侧输出物品"));
+                            return;
+                        }
+                    }
+
+                    if (inputChanged(b)) {
+                        inv.replaceExistingItem(22, new CustomItemStack(Material.BLACK_STAINED_GLASS_PANE, " "));
+                        processor.endOperation(b);
+                        return;
+                    }
+
+                    processor.updateProgressBar(inv, 22, currentOperation);
+                    currentOperation.addProgress(1);
+                } else {
+                    inv.replaceExistingItem(22, new CustomItemStack(Material.BLACK_STAINED_GLASS_PANE, " "));
+
+                    for (int inputSlot : getInputSlots()) {
+                        inv.consumeItem(inputSlot);
+                    }
+
+                    for (ItemStack output : currentOperation.getResults()) {
+                        inv.pushItem(output.clone(), getOutputSlots());
+                    }
+
+                    processor.endOperation(b);
+                }
+            }
+        } else {
+            MachineRecipe next = findNextRecipe(inv);
+
+            if (next != null) {
+                processor.startOperation(b, new CraftingOperation(next));
+            }
+        }
     }
 }
