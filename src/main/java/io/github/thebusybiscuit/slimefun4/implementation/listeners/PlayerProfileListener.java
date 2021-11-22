@@ -1,11 +1,13 @@
 package io.github.thebusybiscuit.slimefun4.implementation.listeners;
 
 import java.util.Optional;
+import java.util.logging.Level;
 
 import javax.annotation.Nonnull;
 
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Slime;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerKickEvent;
@@ -32,6 +34,18 @@ public class PlayerProfileListener implements Listener {
     public void onDisconnect(PlayerQuitEvent e) {
         Optional<PlayerProfile> profile = PlayerProfile.find(e.getPlayer());
 
+        // if the player left the server, saves its profile instantly
+        if (profile.isPresent()) {
+            profile.get().save();
+
+            String playerName = e.getPlayer().getName();
+            Slimefun.logger().log(Level.INFO, "成功保存玩家 {0} 的数据", playerName);
+
+            if (Slimefun.getRegistry().getPlayerProfiles().values().remove(profile.get())) {
+                Slimefun.logger().log(Level.INFO, "已安全删除玩家 {0} 的缓存", playerName);
+            }
+        }
+        
         // if we still have a profile of this Player in memory, delete it
         profile.ifPresent(PlayerProfile::markForDeletion);
     }
@@ -39,6 +53,18 @@ public class PlayerProfileListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onKick(PlayerKickEvent e) {
         Optional<PlayerProfile> profile = PlayerProfile.find(e.getPlayer());
+
+        // if the player left the server, saves its profile instantly
+        if (profile.isPresent()) {
+            profile.get().save();
+
+            String playerName = e.getPlayer().getName();
+            Slimefun.logger().log(Level.INFO, "成功保存玩家 {0} 的数据", playerName);
+
+            if (Slimefun.getRegistry().getPlayerProfiles().values().remove(profile.get())) {
+                Slimefun.logger().log(Level.INFO, "已安全删除玩家 {0} 的缓存", playerName);
+            }
+        }
 
         // if we still have a profile of this Player in memory, delete it
         profile.ifPresent(PlayerProfile::markForDeletion);
