@@ -81,6 +81,7 @@ import io.github.thebusybiscuit.slimefun4.implementation.listeners.GrapplingHook
 import io.github.thebusybiscuit.slimefun4.implementation.listeners.HopperListener;
 import io.github.thebusybiscuit.slimefun4.implementation.listeners.ItemDropListener;
 import io.github.thebusybiscuit.slimefun4.implementation.listeners.ItemPickupListener;
+import io.github.thebusybiscuit.slimefun4.implementation.listeners.MiddleClickListener;
 import io.github.thebusybiscuit.slimefun4.implementation.listeners.MiningAndroidListener;
 import io.github.thebusybiscuit.slimefun4.implementation.listeners.MultiBlockListener;
 import io.github.thebusybiscuit.slimefun4.implementation.listeners.NetworkListener;
@@ -259,7 +260,7 @@ public final class Slimefun extends JavaPlugin implements SlimefunAddon {
         if (PaperLib.isPaper()) {
             logger.log(Level.INFO, "检测到 Paper 服务端! 性能优化已应用.");
         } else {
-            PaperLib.suggestPaper(this);
+            LangUtil.suggestPaper(this);
         }
 
         // Check if CS-CoreLib is installed (it is no longer needed)
@@ -389,6 +390,8 @@ public final class Slimefun extends JavaPlugin implements SlimefunAddon {
         if (instance() == null || minecraftVersion == MinecraftVersion.UNIT_TEST) {
             return;
         }
+
+        SlimefunExtra.shutdown();
 
         // Cancel all tasks from this plugin immediately
         Bukkit.getScheduler().cancelTasks(this);
@@ -625,6 +628,7 @@ public final class Slimefun extends JavaPlugin implements SlimefunAddon {
         new SoulboundListener(this);
         new AutoCrafterListener(this);
         new SlimefunItemHitListener(this);
+        new MiddleClickListener(this);
 
         // Bees were added in 1.15
         if (minecraftVersion.isAtLeast(MinecraftVersion.MINECRAFT_1_15)) {
