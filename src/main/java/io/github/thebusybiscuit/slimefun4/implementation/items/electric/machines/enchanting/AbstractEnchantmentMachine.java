@@ -92,6 +92,9 @@ abstract class AbstractEnchantmentMachine extends AContainer {
         return false;
     }
 
+    /**
+     * 检测当前输入栏位置的物品是否与 recipe 预期值匹配
+     */
     private boolean inputChanged(Block b) {
         BlockMenu inv = BlockStorage.getInventory(b);
 
@@ -123,7 +126,7 @@ abstract class AbstractEnchantmentMachine extends AContainer {
 
                     for (int slot : getOutputSlots()) {
                         if (inv.getItemInSlot(slot) != null) {
-                            inv.replaceExistingItem(22, new CustomItemStack(Material.BARRIER, "&6暂停工作", "&e请清空右侧输出物品"));
+                            inv.replaceExistingItem(22, new CustomItemStack(Material.BARRIER, "&b暂停工作", "&a请清空右侧输出栏内物品"));
                             return;
                         }
                     }
