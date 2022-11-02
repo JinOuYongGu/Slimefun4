@@ -157,7 +157,11 @@ abstract class AbstractEnchantmentMachine extends AContainer {
             MachineRecipe next = findNextRecipe(inv);
 
             if (next != null) {
-                processor.startOperation(b, new CraftingOperation(next));
+                currentOperation = new CraftingOperation(next);
+                processor.startOperation(b, currentOperation);
+
+                // Fixes #3534 - Update indicator immediately
+                processor.updateProgressBar(inv, 22, currentOperation);
             }
         }
     }

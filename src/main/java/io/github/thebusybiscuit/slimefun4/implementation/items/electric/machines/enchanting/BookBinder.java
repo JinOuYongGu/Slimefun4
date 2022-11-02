@@ -1,13 +1,17 @@
 package io.github.thebusybiscuit.slimefun4.implementation.items.electric.machines.enchanting;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import io.github.bakedlibs.dough.items.CustomItemStack;
+import io.github.thebusybiscuit.slimefun4.core.machines.MachineProcessor;
+import io.github.thebusybiscuit.slimefun4.implementation.operations.CraftingOperation;
+import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
@@ -76,10 +80,6 @@ public class BookBinder extends AContainer {
 
                     if (!InvUtils.fitAll(menu.toInventory(), recipe.getOutput(), getOutputSlots())) {
                         return null;
-                    }
-
-                    for (int inputSlot : getInputSlots()) {
-                        menu.consumeItem(inputSlot);
                     }
 
                     return recipe;
@@ -166,6 +166,80 @@ public class BookBinder extends AContainer {
                 return highestLevel;
             }
 
+        }
+    }
+
+    /**
+     * 检测当前输入栏位置的物品是否与 recipe 预期值匹配
+     */
+    private boolean inputChanged(Block b) {
+        BlockMenu inv = BlockStorage.getInventory(b);
+
+        MachineProcessor<CraftingOperation> processor = getMachineProcessor();
+        List<ItemStack> recipeInputItems = new ArrayList<>(Arrays.asList(processor.getOperation(b).getIngredients()));
+
+        List<ItemStack> currentInputItems = new ArrayList<>();
+        for (int slot : getInputSlots()) {
+            currentInputItems.add(inv.getItemInSlot(slot));
+        }
+
+        for (ItemStack currentItem : currentInputItems) {
+            recipeInputItems.remove(currentItem);
+        }
+
+        return recipeInputItems.size() != 0;
+    }
+
+    @Override
+    protected void tick(Block b) {
+        BlockMenu inv = BlockStorage.getInventory(b);
+        MachineProcessor<CraftingOperation> processor = getMachineProcessor();
+        CraftingOperation currentOperation = processor.getOperation(b);
+
+        if (currentOperation != null) {
+            if (takeCharge(b.getLocation())) {
+
+                if (!currentOperation.isFinished()) {
+
+                    for (int slot : getOutputSlots()) {
+                        if (inv.getItemInSlot(slot) != null) {
+                            inv.replaceExistingItem(22, new CustomItemStack(Material.BARRIER, "&b暂停工作", "&a请清空右侧输出栏内物品"));
+                            return;
+                        }
+                    }
+
+                    if (inputChanged(b)) {
+                        inv.replaceExistingItem(22, new CustomItemStack(Material.BLACK_STAINED_GLASS_PANE, " "));
+                        processor.endOperation(b);
+                        return;
+                    }
+
+                    processor.updateProgressBar(inv, 22, currentOperation);
+                    currentOperation.addProgress(1);
+                } else {
+                    inv.replaceExistingItem(22, new CustomItemStack(Material.BLACK_STAINED_GLASS_PANE, " "));
+
+                    for (int inputSlot : getInputSlots()) {
+                        inv.consumeItem(inputSlot);
+                    }
+
+                    for (ItemStack output : currentOperation.getResults()) {
+                        inv.pushItem(output.clone(), getOutputSlots());
+                    }
+
+                    processor.endOperation(b);
+                }
+            }
+        } else {
+            MachineRecipe next = findNextRecipe(inv);
+
+            if (next != null) {
+                currentOperation = new CraftingOperation(next);
+                processor.startOperation(b, currentOperation);
+
+                // Fixes #3534 - Update indicator immediately
+                processor.updateProgressBar(inv, 22, currentOperation);
+            }
         }
     }
 }

@@ -61,6 +61,12 @@ public class BlockListener implements Listener {
         if (e.getBlockReplacedState().getType().isAir()) {
             SlimefunItem sfItem = BlockStorage.check(block);
 
+            if (e.getBlockAgainst().getType()==Material.NOTE_BLOCK){
+                e.getPlayer().sendMessage("音符盒上无法放置机器");
+                e.setCancelled(true);
+                return;
+            }
+
             if (sfItem != null && !Slimefun.getTickerTask().isDeletedSoon(block.getLocation())) {
                 for (ItemStack item : sfItem.getDrops()) {
                     if (item != null && !item.getType().isAir()) {
