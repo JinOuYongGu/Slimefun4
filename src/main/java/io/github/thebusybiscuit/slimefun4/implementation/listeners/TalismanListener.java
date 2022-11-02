@@ -1,28 +1,18 @@
 package io.github.thebusybiscuit.slimefun4.implementation.listeners;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
+import io.github.bakedlibs.dough.items.CustomItemStack;
+import io.github.thebusybiscuit.slimefun4.api.MinecraftVersion;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
+import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
+import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
+import io.github.thebusybiscuit.slimefun4.implementation.items.magical.talismans.MagicianTalisman;
+import io.github.thebusybiscuit.slimefun4.implementation.items.magical.talismans.Talisman;
+import io.github.thebusybiscuit.slimefun4.implementation.settings.TalismanEnchantment;
+import io.github.thebusybiscuit.slimefun4.utils.tags.SlimefunTag;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.AbstractArrow;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.ChestedHorse;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
-import org.bukkit.entity.Ravager;
-import org.bukkit.entity.Trident;
+import org.bukkit.entity.*;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -38,18 +28,16 @@ import org.bukkit.event.player.PlayerItemBreakEvent;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.LlamaInventory;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
 
-import io.github.bakedlibs.dough.items.CustomItemStack;
-import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
-import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
-import io.github.thebusybiscuit.slimefun4.implementation.items.magical.talismans.MagicianTalisman;
-import io.github.thebusybiscuit.slimefun4.implementation.items.magical.talismans.Talisman;
-import io.github.thebusybiscuit.slimefun4.implementation.settings.TalismanEnchantment;
-import io.github.thebusybiscuit.slimefun4.utils.tags.SlimefunTag;
+import javax.annotation.Nonnull;
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * This {@link Listener} is responsible for handling any {@link Event}
@@ -100,8 +88,8 @@ public class TalismanListener implements Listener {
                     Talisman.trigger(e, SlimefunItems.TALISMAN_WARRIOR);
                     break;
                 case PROJECTILE:
-                    if (e instanceof EntityDamageByEntityEvent) {
-                        onProjectileDamage((EntityDamageByEntityEvent) e);
+                    if (e instanceof EntityDamageByEntityEvent entityDamageByEntityEvent) {
+                        onProjectileDamage(entityDamageByEntityEvent);
                     }
                     break;
                 default:
@@ -112,9 +100,7 @@ public class TalismanListener implements Listener {
 
     private void onProjectileDamage(@Nonnull EntityDamageByEntityEvent e) {
         // "Fixes" #1022 - We just ignore Tridents now.
-        if (e.getDamager() instanceof Projectile && !(e.getDamager() instanceof Trident)) {
-            Projectile projectile = (Projectile) e.getDamager();
-
+        if (e.getDamager() instanceof Projectile projectile && !(e.getDamager() instanceof Trident)) {
             if (Talisman.trigger(e, SlimefunItems.TALISMAN_WHIRLWIND)) {
                 Player p = (Player) e.getEntity();
                 returnProjectile(p, projectile);
@@ -139,8 +125,7 @@ public class TalismanListener implements Listener {
         returnedProjectile.setShooter(projectile.getShooter());
         returnedProjectile.setVelocity(direction);
 
-        if (projectile instanceof AbstractArrow) {
-            AbstractArrow firedArrow = (AbstractArrow) projectile;
+        if (projectile instanceof AbstractArrow firedArrow) {
             AbstractArrow returnedArrow = (AbstractArrow) returnedProjectile;
 
             returnedArrow.setDamage(firedArrow.getDamage());
@@ -168,6 +153,13 @@ public class TalismanListener implements Listener {
         }
 
         /*
+         * Return because allay is so cute, DO NOT KILL THEM.
+         */
+        if (Slimefun.getMinecraftVersion().isAtLeast(MinecraftVersion.MINECRAFT_1_19) && entity instanceof Allay) {
+            return;
+        }
+
+        /*
          * We are also excluding entities which can pickup items,
          * this is not perfect but it at least prevents dupes
          * by tossing items to zombies.
@@ -189,14 +181,12 @@ public class TalismanListener implements Listener {
         List<ItemStack> items = new ArrayList<>(drops);
 
         // Prevent duplication of items stored inside a Horse's chest
-        if (entity instanceof ChestedHorse) {
-            ChestedHorse horse = (ChestedHorse) entity;
-
-            if (horse.isCarryingChest()) {
+        if (entity instanceof ChestedHorse chestedHorse) {
+            if (chestedHorse.isCarryingChest()) {
                 // The chest is not included in getStorageContents()
                 items.remove(new ItemStack(Material.CHEST));
 
-                for (ItemStack item : horse.getInventory().getStorageContents()) {
+                for (ItemStack item : chestedHorse.getInventory().getStorageContents()) {
                     items.remove(item);
                 }
             }
@@ -226,6 +216,21 @@ public class TalismanListener implements Listener {
 
             items.remove(equipment.getItemInMainHand());
             items.remove(equipment.getItemInOffHand());
+        }
+
+        if (entity instanceof AbstractHorse abstractHorse) {
+            var inventory = abstractHorse.getInventory();
+            items.remove(inventory.getSaddle());
+
+            if (inventory instanceof LlamaInventory llamaInventory) {
+                items.remove(llamaInventory.getDecor());
+            } else if (inventory.getItem(1) != null) {
+                items.remove(inventory.getItem(1));
+            }
+        }
+
+        if (entity instanceof Steerable steerable && steerable.hasSaddle()) {
+            items.remove(new ItemStack(Material.SADDLE));
         }
 
         return items;
@@ -262,8 +267,8 @@ public class TalismanListener implements Listener {
             ItemStack item = e.getBrokenItem().clone();
             ItemMeta meta = item.getItemMeta();
 
-            if (meta instanceof Damageable) {
-                ((Damageable) meta).setDamage(0);
+            if (meta instanceof Damageable damageable) {
+                damageable.setDamage(0);
             }
 
             item.setItemMeta(meta);

@@ -147,9 +147,8 @@ public class EnchantmentRune extends SimpleSlimefunItem<ItemDropHandler> {
 
                         // When multiple runes have been merged, reduce one rune.
                         if (rune.getItemStack().getAmount() > 1) {
-                            ItemStack runeCopy = rune.getItemStack();
-                            runeCopy.setAmount(runeCopy.getAmount() - 1);
-                            rune.setItemStack(runeCopy);
+                            runeStack.setAmount(runeStack.getAmount() - 1);
+                            rune.setItemStack(runeStack);
                         } else {
                             rune.remove();
                         }
@@ -197,9 +196,7 @@ public class EnchantmentRune extends SimpleSlimefunItem<ItemDropHandler> {
     }
 
     private boolean findCompatibleItem(@Nonnull Entity n) {
-        if (n instanceof Item) {
-            Item item = (Item) n;
-
+        if (n instanceof Item item) {
             return !isItem(item.getItemStack());
         }
 

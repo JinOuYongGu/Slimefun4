@@ -1,17 +1,36 @@
 package io.github.thebusybiscuit.slimefun4.implementation.items.androids;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.logging.Level;
-
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
+import io.github.bakedlibs.dough.chat.ChatInput;
+import io.github.bakedlibs.dough.common.ChatColors;
+import io.github.bakedlibs.dough.common.CommonPatterns;
+import io.github.bakedlibs.dough.items.CustomItemStack;
+import io.github.bakedlibs.dough.items.ItemUtils;
 import io.github.bakedlibs.dough.protection.Interaction;
+import io.github.bakedlibs.dough.skins.PlayerHead;
+import io.github.bakedlibs.dough.skins.PlayerSkin;
+import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
+import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
+import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
+import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
+import io.github.thebusybiscuit.slimefun4.core.attributes.RecipeDisplayItem;
+import io.github.thebusybiscuit.slimefun4.core.handlers.BlockBreakHandler;
+import io.github.thebusybiscuit.slimefun4.core.handlers.BlockPlaceHandler;
+import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
+import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
 import io.github.thebusybiscuit.slimefun4.implementation.items.androids.menu.AndroidShareMenu;
+import io.github.thebusybiscuit.slimefun4.utils.*;
+import io.papermc.lib.PaperLib;
+import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
+import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu;
+import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu.AdvancedMenuClickHandler;
+import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction;
+import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.abstractItems.MachineFuel;
+import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.interfaces.InventoryBlock;
+import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
+import me.mrCookieSlime.Slimefun.api.BlockStorage;
+import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
+import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
+import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
 import org.apache.commons.lang.Validate;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -28,48 +47,22 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-
-import io.github.bakedlibs.dough.chat.ChatInput;
-import io.github.bakedlibs.dough.common.ChatColors;
-import io.github.bakedlibs.dough.common.CommonPatterns;
-import io.github.bakedlibs.dough.items.CustomItemStack;
-import io.github.bakedlibs.dough.items.ItemUtils;
-import io.github.bakedlibs.dough.skins.PlayerHead;
-import io.github.bakedlibs.dough.skins.PlayerSkin;
-import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
-import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
-import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
-import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
-import io.github.thebusybiscuit.slimefun4.core.attributes.RecipeDisplayItem;
-import io.github.thebusybiscuit.slimefun4.core.handlers.BlockBreakHandler;
-import io.github.thebusybiscuit.slimefun4.core.handlers.BlockPlaceHandler;
-import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
-import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
-import io.github.thebusybiscuit.slimefun4.utils.ChestMenuUtils;
-import io.github.thebusybiscuit.slimefun4.utils.HeadTexture;
-import io.github.thebusybiscuit.slimefun4.utils.NumberUtils;
-import io.github.thebusybiscuit.slimefun4.utils.SlimefunUtils;
-import io.github.thebusybiscuit.slimefun4.utils.WorldUtils;
-import io.papermc.lib.PaperLib;
-
-import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
-import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu;
-import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu.AdvancedMenuClickHandler;
-import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction;
-import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.abstractItems.MachineFuel;
-import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.interfaces.InventoryBlock;
-import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
-import me.mrCookieSlime.Slimefun.api.BlockStorage;
-import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
-import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
-import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
 import ren.natsuyuk1.slimefunextra.IntegrationHelper;
+
+import javax.annotation.Nonnull;
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.logging.Level;
 
 public class ProgrammableAndroid extends SlimefunItem implements InventoryBlock, RecipeDisplayItem {
 
     private static final List<BlockFace> POSSIBLE_ROTATIONS = Arrays.asList(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST);
-    private static final int[] BORDER = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 18, 24, 25, 26, 27, 33, 35, 36, 42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53 };
-    private static final int[] OUTPUT_BORDER = { 10, 11, 12, 13, 14, 19, 23, 28, 32, 37, 38, 39, 40, 41 };
+    private static final int[] BORDER = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 18, 24, 25, 26, 27, 33, 35, 36, 42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53};
+    private static final int[] OUTPUT_BORDER = {10, 11, 12, 13, 14, 19, 23, 28, 32, 37, 38, 39, 40, 41};
     private static final String DEFAULT_SCRIPT = "START-TURN_LEFT-REPEAT";
     private static final int MAX_SCRIPT_LENGTH = 54;
 
@@ -165,8 +158,8 @@ public class ProgrammableAndroid extends SlimefunItem implements InventoryBlock,
                 BlockStorage.addBlockInfo(b, "paused", "true");
 
                 BlockData blockData = Material.PLAYER_HEAD.createBlockData(data -> {
-                    if (data instanceof Rotatable) {
-                        ((Rotatable) data).setRotation(p.getFacing());
+                    if (data instanceof Rotatable rotatable) {
+                        rotatable.setRotation(p.getFacing());
                     }
                 });
 
@@ -216,16 +209,12 @@ public class ProgrammableAndroid extends SlimefunItem implements InventoryBlock,
      * @return The required type of fuel
      */
     public AndroidFuelSource getFuelSource() {
-        switch (getTier()) {
-            case 1:
-                return AndroidFuelSource.SOLID;
-            case 2:
-                return AndroidFuelSource.LIQUID;
-            case 3:
-                return AndroidFuelSource.NUCLEAR;
-            default:
-                throw new IllegalStateException("Cannot convert the following Android tier to a fuel type: " + getTier());
-        }
+        return switch (getTier()) {
+            case 1 -> AndroidFuelSource.SOLID;
+            case 2 -> AndroidFuelSource.LIQUID;
+            case 3 -> AndroidFuelSource.NUCLEAR;
+            default -> throw new IllegalStateException("Cannot convert the following Android tier to a fuel type: " + getTier());
+        };
     }
 
     @Override
@@ -611,7 +600,7 @@ public class ProgrammableAndroid extends SlimefunItem implements InventoryBlock,
 
     private void registerDefaultFuelTypes() {
         switch (getFuelSource()) {
-            case SOLID:
+            case SOLID -> {
                 registerFuelType(new MachineFuel(80, new ItemStack(Material.COAL_BLOCK)));
                 registerFuelType(new MachineFuel(45, new ItemStack(Material.BLAZE_ROD)));
                 registerFuelType(new MachineFuel(70, new ItemStack(Material.DRIED_KELP_BLOCK)));
@@ -629,20 +618,18 @@ public class ProgrammableAndroid extends SlimefunItem implements InventoryBlock,
                 for (Material mat : Tag.PLANKS.getValues()) {
                     registerFuelType(new MachineFuel(1, new ItemStack(mat)));
                 }
-
-                break;
-            case LIQUID:
+            }
+            case LIQUID -> {
                 registerFuelType(new MachineFuel(100, new ItemStack(Material.LAVA_BUCKET)));
                 registerFuelType(new MachineFuel(200, SlimefunItems.OIL_BUCKET));
                 registerFuelType(new MachineFuel(500, SlimefunItems.FUEL_BUCKET));
-                break;
-            case NUCLEAR:
+            }
+            case NUCLEAR -> {
                 registerFuelType(new MachineFuel(2500, SlimefunItems.URANIUM));
                 registerFuelType(new MachineFuel(1200, SlimefunItems.NEPTUNIUM));
                 registerFuelType(new MachineFuel(3000, SlimefunItems.BOOSTED_URANIUM));
-                break;
-            default:
-                throw new IllegalStateException("Unhandled Fuel Source: " + getFuelSource());
+            }
+            default -> throw new IllegalStateException("Unhandled Fuel Source: " + getFuelSource());
         }
     }
 
@@ -769,8 +756,7 @@ public class ProgrammableAndroid extends SlimefunItem implements InventoryBlock,
         BlockFace rotation = POSSIBLE_ROTATIONS.get(index);
 
         BlockData blockData = Material.PLAYER_HEAD.createBlockData(data -> {
-            if (data instanceof Rotatable) {
-                Rotatable rotatable = ((Rotatable) data);
+            if (data instanceof Rotatable rotatable) {
                 rotatable.setRotation(rotation.getOppositeFace());
             }
         });
@@ -783,14 +769,12 @@ public class ProgrammableAndroid extends SlimefunItem implements InventoryBlock,
         if (facedBlock.getType() == Material.DISPENSER && BlockStorage.check(facedBlock, "ANDROID_INTERFACE_ITEMS")) {
             BlockState state = PaperLib.getBlockState(facedBlock, false).getState();
 
-            if (state instanceof Dispenser) {
-                Dispenser d = (Dispenser) state;
-
+            if (state instanceof Dispenser dispenser) {
                 for (int slot : getOutputSlots()) {
                     ItemStack stack = menu.getItemInSlot(slot);
 
                     if (stack != null) {
-                        Optional<ItemStack> optional = d.getInventory().addItem(stack).values().stream().findFirst();
+                        Optional<ItemStack> optional = dispenser.getInventory().addItem(stack).values().stream().findFirst();
 
                         if (optional.isPresent()) {
                             menu.replaceExistingItem(slot, optional.get());
@@ -807,14 +791,12 @@ public class ProgrammableAndroid extends SlimefunItem implements InventoryBlock,
         if (facedBlock.getType() == Material.DISPENSER && BlockStorage.check(facedBlock, "ANDROID_INTERFACE_FUEL")) {
             BlockState state = PaperLib.getBlockState(facedBlock, false).getState();
 
-            if (state instanceof Dispenser) {
-                Dispenser d = (Dispenser) state;
-
+            if (state instanceof Dispenser dispenser) {
                 for (int slot = 0; slot < 9; slot++) {
-                    ItemStack item = d.getInventory().getItem(slot);
+                    ItemStack item = dispenser.getInventory().getItem(slot);
 
                     if (item != null) {
-                        insertFuel(menu, d.getInventory(), slot, menu.getItemInSlot(43), item);
+                        insertFuel(menu, dispenser.getInventory(), slot, menu.getItemInSlot(43), item);
                     }
                 }
             }
@@ -906,7 +888,7 @@ public class ProgrammableAndroid extends SlimefunItem implements InventoryBlock,
                 return;
             }
 
-            if (!IntegrationHelper.checkPermission(p, block, Interaction.PLACE_BLOCK)) {
+            if (!IntegrationHelper.checkResidence(p, block, Interaction.PLACE_BLOCK)) {
                 BlockStorage.addBlockInfo(b, "paused", "false");
                 Slimefun.getLocalization().sendMessage(p, "messages.android-no-permission", true);
                 return;
@@ -920,8 +902,7 @@ public class ProgrammableAndroid extends SlimefunItem implements InventoryBlock,
             }
 
             BlockData blockData = Material.PLAYER_HEAD.createBlockData(data -> {
-                if (data instanceof Rotatable) {
-                    Rotatable rotatable = ((Rotatable) data);
+                if (data instanceof Rotatable rotatable) {
                     rotatable.setRotation(face.getOppositeFace());
                 }
             });
