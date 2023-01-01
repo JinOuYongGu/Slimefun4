@@ -27,7 +27,7 @@ public class JetpackTask extends AbstractPlayerTask {
         }
 
         if (jetpack.removeItemCharge(p.getInventory().getChestplate(), COST)) {
-            p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, (float) 0.25, 1);
+            p.getWorld().playSound(p.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, (float) 0.25, 1);
             p.getWorld().playEffect(p.getLocation(), Effect.SMOKE, 1, 1);
             p.setFallDistance(0F);
             Vector vector = new Vector(0, 1, 0);
