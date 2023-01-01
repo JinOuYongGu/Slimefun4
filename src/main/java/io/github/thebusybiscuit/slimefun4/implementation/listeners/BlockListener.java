@@ -11,6 +11,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.enchantments.Enchantment;
@@ -63,8 +64,8 @@ public class BlockListener implements Listener {
 
             if (sfItem != null && !Slimefun.getTickerTask().isDeletedSoon(block.getLocation())) {
 
-                if (e.getBlockAgainst().getType()==Material.NOTE_BLOCK){
-                    e.getPlayer().sendMessage("§fㅏ §a音符盒上无法放置机器");
+                if (hasBanItemNearBlock(block)){
+                    e.getPlayer().sendMessage("§fㅏ §a无法将机器放置在音符盒 绊线 或其它物品附近");
                     e.setCancelled(true);
                     return;
                 }
@@ -95,6 +96,9 @@ public class BlockListener implements Listener {
 
         if (sfItem != null && !(sfItem instanceof NotPlaceable)) {
             if (!sfItem.canUse(e.getPlayer(), true)) {
+                e.setCancelled(true);
+            } else if (hasBanItemNearBlock(e.getBlock())) {
+                e.getPlayer().sendMessage("§fㅏ §a无法将机器放置在音符盒 绊线 或其它物品附近");
                 e.setCancelled(true);
             } else {
                 if (Slimefun.getBlockDataService().isTileEntity(e.getBlock().getType())) {
@@ -264,5 +268,31 @@ public class BlockListener implements Listener {
         }
 
         return amount;
+    }
+
+    private boolean hasBanItemNearBlock(Block block)
+    {
+        int blockX = block.getLocation().getBlockX();
+        int blockY = block.getLocation().getBlockY();
+        int blockZ = block.getLocation().getBlockZ();
+        World world = block.getWorld();
+        int checkRange = 1;
+
+        for (int xloc = (blockX - checkRange); xloc <= (blockX + checkRange); xloc++) {
+            for (int yloc = (blockY - checkRange); yloc <= (blockY + checkRange); yloc++) {
+                for (int zloc = (blockZ - checkRange); zloc <= (blockZ + checkRange); zloc++) {
+
+                    if ((xloc == blockX) && (yloc == blockY) && (zloc == blockZ)) {
+                        continue;
+                    }
+
+                    Block checkBlock = world.getBlockAt(xloc, yloc, zloc);
+                    if (Material.NOTE_BLOCK == checkBlock.getType() || Material.TRIPWIRE == checkBlock.getType()) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 }
