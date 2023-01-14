@@ -190,6 +190,10 @@ class MiningTask implements Runnable {
 
                 World world = start.getWorld();
                 for (int y = height; y > WorldUtils.getMinHeight(world); y--) {
+                    if (Math.random() > 0.1) {
+                        continue;
+                    }
+
                     Block b = world.getBlockAt(x, y, z);
 
                     if (!Slimefun.getProtectionManager().hasPermission(Bukkit.getOfflinePlayer(owner), b, Interaction.BREAK_BLOCK)) {
