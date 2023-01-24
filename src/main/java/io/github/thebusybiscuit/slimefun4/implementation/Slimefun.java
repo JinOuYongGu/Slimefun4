@@ -29,10 +29,7 @@ import io.github.thebusybiscuit.slimefun4.implementation.resources.GEOResourcesS
 import io.github.thebusybiscuit.slimefun4.implementation.setup.PostSetup;
 import io.github.thebusybiscuit.slimefun4.implementation.setup.ResearchSetup;
 import io.github.thebusybiscuit.slimefun4.implementation.setup.SlimefunItemSetup;
-import io.github.thebusybiscuit.slimefun4.implementation.tasks.AncientPedestalTask;
-import io.github.thebusybiscuit.slimefun4.implementation.tasks.ArmorTask;
-import io.github.thebusybiscuit.slimefun4.implementation.tasks.SlimefunStartupTask;
-import io.github.thebusybiscuit.slimefun4.implementation.tasks.TickerTask;
+import io.github.thebusybiscuit.slimefun4.implementation.tasks.*;
 import io.github.thebusybiscuit.slimefun4.integrations.IntegrationsManager;
 import io.github.thebusybiscuit.slimefun4.utils.NumberUtils;
 import io.github.thebusybiscuit.slimefun4.utils.tags.SlimefunTag;
@@ -100,6 +97,7 @@ public final class Slimefun extends JavaPlugin implements SlimefunAddon {
     private final SlimefunRegistry registry = new SlimefunRegistry();
     private final SlimefunCommand command = new SlimefunCommand(this);
     private final TickerTask ticker = new TickerTask();
+    private final TpsTask tpsTask = new TpsTask();
 
     // Services - Systems that fulfill certain tasks, treat them as a black box
     private final CustomItemDataService itemDataService = new CustomItemDataService(this, "slimefun_item");
@@ -300,6 +298,9 @@ public final class Slimefun extends JavaPlugin implements SlimefunAddon {
         autoSavingService.start(this, config.getInt("options.auto-save-delay-in-minutes"));
         hologramsService.start();
         ticker.start(this);
+
+        logger.log(Level.INFO, "正在加载TPS监测器...");
+        tpsTask.start(this);
 
         logger.log(Level.INFO, "正在加载第三方插件支持...");
         integrations.start();
@@ -718,6 +719,11 @@ public final class Slimefun extends JavaPlugin implements SlimefunAddon {
     public static @Nonnull TickerTask getTickerTask() {
         validateInstance();
         return instance.ticker;
+    }
+
+    public static @Nonnull TpsTask getTpsTask() {
+        validateInstance();
+        return instance.tpsTask;
     }
 
     /**

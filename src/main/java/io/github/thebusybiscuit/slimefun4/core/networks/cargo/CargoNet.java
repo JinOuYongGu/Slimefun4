@@ -42,7 +42,8 @@ import me.mrCookieSlime.Slimefun.api.BlockStorage;
 public class CargoNet extends AbstractItemNetwork implements HologramOwner {
 
     private static final int RANGE = 5;
-    private static final int TICK_DELAY = Slimefun.getCfg().getInt("networks.cargo-ticker-delay");
+    private static int tickDelay = Slimefun.getCfg().getInt("networks.cargo-ticker-delay");
+    private static long lastTickDelayUpdateTime = 0;
 
     private final Set<Location> inputNodes = new HashSet<>();
     private final Set<Location> outputNodes = new HashSet<>();
@@ -139,7 +140,9 @@ public class CargoNet extends AbstractItemNetwork implements HologramOwner {
 
             // Skip ticking if the threshold is not reached. The delay is not same as minecraft tick,
             // but it's based on 'custom-ticker-delay' config.
-            if (tickDelayThreshold < TICK_DELAY) {
+            updateTickDelay();
+            int invalidTickDelay = 9999;
+            if (tickDelayThreshold == invalidTickDelay || tickDelayThreshold < tickDelay) {
                 tickDelayThreshold++;
                 return;
             }
@@ -158,6 +161,28 @@ public class CargoNet extends AbstractItemNetwork implements HologramOwner {
 
             CargoNetworkTask runnable = new CargoNetworkTask(this, inputs, outputs);
             Slimefun.runSync(runnable);
+        }
+    }
+
+    private void updateTickDelay() {
+        long curTime = System.currentTimeMillis();
+        long minInMs = 5 * 1000;
+        if (curTime - lastTickDelayUpdateTime > minInMs) {
+            lastTickDelayUpdateTime = curTime;
+            double aveTps = Slimefun.getTpsTask().getAverageTps();
+            int prevDelay = tickDelay;
+            if (aveTps >= 19) {
+                tickDelay = Slimefun.getCfg().getInt("networks.cargo-ticker-delay");
+            } else if (aveTps >= 17) {
+                tickDelay = 5;
+            } else if (aveTps >= 15) {
+                tickDelay = 10;
+            } else {
+                tickDelay = 9999;
+            }
+            if (prevDelay != tickDelay) {
+                Slimefun.logger().info(String.format("updated tickDelay to %d, tps is %2.2f", tickDelay, aveTps));
+            }
         }
     }
 
